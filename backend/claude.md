@@ -1148,6 +1148,180 @@ docker-compose up -d
 
 ---
 
+## Troubleshooting TypeScript Warnings
+
+### Common Issues and Solutions
+
+#### 1. "Cannot find module 'passport'" or similar
+
+**Problem**: TypeScript can't find installed packages.
+
+**Solution**:
+```bash
+# Install dependencies first!
+npm install
+
+# If still seeing errors, restart VS Code
+# Or run TypeScript server restart in VS Code:
+# Cmd/Ctrl + Shift + P → "TypeScript: Restart TS Server"
+```
+
+#### 2. "Type recursively references itself as a base type"
+
+**Problem**: Circular reference in type definitions.
+
+**Example**:
+```typescript
+// ❌ WRONG
+import User from '../models/User';
+declare global {
+  namespace Express {
+    interface User extends User {}  // Circular!
+  }
+}
+```
+
+**Solution**:
+```typescript
+// ✅ CORRECT
+import UserModel from '../models/User';  // Rename import
+declare global {
+  namespace Express {
+    interface User extends UserModel {}
+  }
+}
+```
+
+#### 3. "X is declared but its value is never read"
+
+**Problem**: Unused variables/parameters in strict TypeScript.
+
+**Solution**: Prefix with underscore to indicate intentionally unused:
+```typescript
+// ❌ WRONG
+function middleware(req, res, next) { ... }
+
+// ✅ CORRECT
+function middleware(req, _res, next) { ... }  // res not used
+function callback(_err, user, _info) { ... }  // err and info not used
+```
+
+#### 4. "Property 'X' is missing in type 'Y'"
+
+**Problem**: Missing required fields when creating models.
+
+**Solution**: Check model definition and provide all required fields:
+```typescript
+// ❌ WRONG
+await User.create({
+  email,
+  google_id,
+  name,
+  // Missing required fields!
+});
+
+// ✅ CORRECT
+await User.create({
+  email,
+  google_id,
+  name,
+  preferred_contact_method: ContactMethod.EMAIL,  // Required!
+  role: UserRole.CUSTOMER,
+  status: UserStatus.ACTIVE,
+});
+```
+
+#### 5. "No overload matches this call" (JWT/OAuth)
+
+**Problem**: Type mismatch with library functions.
+
+**Google OAuth Solution**:
+```typescript
+// ❌ WRONG
+new GoogleStrategy({
+  clientID: env.GOOGLE_CLIENT_ID,
+  clientSecret: env.GOOGLE_CLIENT_SECRET,
+  callbackURL: env.GOOGLE_CALLBACK_URL,
+  scope: ['profile', 'email'],  // scope doesn't go here!
+}, ...)
+```
+
+```typescript
+// ✅ CORRECT
+new GoogleStrategy({
+  clientID: env.GOOGLE_CLIENT_ID,
+  clientSecret: env.GOOGLE_CLIENT_SECRET,
+  callbackURL: env.GOOGLE_CALLBACK_URL,
+  // scope is handled in the auth route, not here
+}, ...)
+```
+
+**JWT Solution**:
+```typescript
+// ❌ WRONG
+jwt.sign(payload, secret, {
+  expiresIn: env.JWT_EXPIRY,  // Type issue with envalid
+});
+
+// ✅ CORRECT - Cast envalid string type
+jwt.sign(payload, secret, {
+  expiresIn: env.JWT_EXPIRY as string,
+} as SignOptions);
+```
+
+#### 6. "Not all code paths return a value"
+
+**Problem**: Function doesn't explicitly return void.
+
+**Solution**:
+```typescript
+// ❌ WRONG
+export const validate = (req, res, next) => {
+  if (errors) {
+    return res.json({ error });  // Early return
+  }
+  next();  // But no explicit return type
+};
+
+// ✅ CORRECT
+export const validate = (req, res, next): void => {
+  if (errors) {
+    res.json({ error });
+    return;  // Explicit void return
+  }
+  next();
+};
+```
+
+### Best Practices to Avoid Warnings
+
+1. **Always run `npm install` after cloning**
+2. **Use descriptive import names** to avoid conflicts (e.g., `UserModel` instead of `User`)
+3. **Prefix unused parameters** with underscore
+4. **Check model definitions** for required fields before using `.create()`
+5. **Cast envalid types** when passing to third-party libraries
+6. **Add explicit return types** for middleware functions
+7. **Run `npx tsc --noEmit`** before committing to catch errors
+8. **Restart TS Server** in VS Code if warnings persist after fixing
+
+### Verification Commands
+
+```bash
+# Check for TypeScript errors
+npx tsc --noEmit
+
+# Should output nothing if all is well!
+# If you see errors, read them carefully and fix one by one
+
+# Run linter
+npm run lint
+
+# Format code
+npm run format
+```
+
+---
+
 ## Conclusion
 
 This backend is built with **modern best practices**, **production-ready architecture**, and **scalability in mind**. Every decision is documented, every pattern is justified, and every line of code serves a purpose.
