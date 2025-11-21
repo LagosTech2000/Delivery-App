@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError as SequelizeValidationError } from 'sequelize';
-import { ValidationError } from 'express-validator';
 import { AppError } from '../utils/errors';
 import logger from '../utils/logger';
 import { env } from '../config/environment';
 
-export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   logger.error('Error occurred:', {
     message: err.message,
     stack: err.stack,
@@ -66,7 +65,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   });
 };
 
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
+export const notFoundHandler = (req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({
     success: false,
     error: `Route ${req.originalUrl} not found`,

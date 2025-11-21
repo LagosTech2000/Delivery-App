@@ -3,7 +3,7 @@ import { Strategy as JwtStrategy, ExtractJwt, StrategyOptions } from 'passport-j
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { env } from './environment';
 import User from '../models/User';
-import { JwtPayload, GoogleProfile, UserRole, UserStatus } from '../types';
+import { JwtPayload, UserRole, UserStatus, ContactMethod } from '../types';
 import { AuthenticationError } from '../utils/errors';
 
 // JWT Strategy for protecting routes
@@ -44,9 +44,8 @@ if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
         clientID: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
         callbackURL: env.GOOGLE_CALLBACK_URL,
-        scope: ['profile', 'email'],
       },
-      async (accessToken, refreshToken, profile: GoogleProfile, done) => {
+      async (_accessToken, _refreshToken, profile: any, done) => {
         try {
           const email = profile.emails[0].value;
 
@@ -89,6 +88,7 @@ if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
             password_hash: null, // No password for Google OAuth users
             role: UserRole.CUSTOMER, // Default role
             status: UserStatus.ACTIVE,
+            preferred_contact_method: ContactMethod.EMAIL,
           });
 
           return done(null, newUser);

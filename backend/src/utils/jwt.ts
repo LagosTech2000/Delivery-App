@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { env } from '../config/environment';
@@ -14,14 +14,14 @@ export class JwtService {
 
   static generateAccessToken(payload: JwtPayload): string {
     return jwt.sign(payload, this.accessTokenSecret, {
-      expiresIn: this.accessTokenExpiry,
-    });
+      expiresIn: this.accessTokenExpiry as string,
+    } as SignOptions);
   }
 
   static generateRefreshToken(payload: JwtPayload): string {
     return jwt.sign(payload, this.refreshTokenSecret, {
-      expiresIn: this.refreshTokenExpiry,
-    });
+      expiresIn: this.refreshTokenExpiry as string,
+    } as SignOptions);
   }
 
   static async generateTokenPair(user: User): Promise<TokenPair> {

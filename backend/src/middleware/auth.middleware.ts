@@ -2,17 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 import { AuthenticationError, AuthorizationError } from '../utils/errors';
 import { UserRole } from '../types';
-import User from '../models/User';
+import UserModel from '../models/User';
 
 // Extend Express Request to include user
 declare global {
   namespace Express {
-    interface User extends User {}
+    interface User extends UserModel {}
   }
 }
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('jwt', { session: false }, (err: any, user: User | false, info: any) => {
+  passport.authenticate('jwt', { session: false }, (err: any, user: UserModel | false, _info: any) => {
     if (err) {
       return next(err);
     }
@@ -27,7 +27,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 };
 
 export const authorize = (...roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AuthenticationError('Authentication required'));
     }
@@ -49,7 +49,7 @@ export const isAgentOrAdmin = authorize(UserRole.AGENT, UserRole.ADMIN);
 export const isCustomerOrAgent = authorize(UserRole.CUSTOMER, UserRole.AGENT);
 
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('jwt', { session: false }, (err: any, user: User | false) => {
+  passport.authenticate('jwt', { session: false }, (_err: any, user: UserModel | false) => {
     if (user) {
       req.user = user;
     }
@@ -57,7 +57,7 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
   })(req, res, next);
 };
 
-export const checkEmailVerified = (req: Request, res: Response, next: NextFunction) => {
+export const checkEmailVerified = (req: Request, _res: Response, next: NextFunction) => {
   if (!req.user) {
     return next(new AuthenticationError('Authentication required'));
   }
@@ -69,7 +69,7 @@ export const checkEmailVerified = (req: Request, res: Response, next: NextFuncti
   next();
 };
 
-export const checkAccountNotLocked = (req: Request, res: Response, next: NextFunction) => {
+export const checkAccountNotLocked = (req: Request, _res: Response, next: NextFunction) => {
   if (!req.user) {
     return next(new AuthenticationError('Authentication required'));
   }
