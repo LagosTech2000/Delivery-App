@@ -19,6 +19,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
 
 # Testing
 coverage/
@@ -44,15 +46,3 @@ temp/
 # OS
 Thumbs.db
 .DS_Store
-
-# Backend specific
-backend/node_modules/
-backend/dist/
-backend/logs/
-backend/uploads/*
-!backend/uploads/.gitkeep
-
-# Frontend specific (when created)
-frontend/node_modules/
-frontend/dist/
-frontend/build/

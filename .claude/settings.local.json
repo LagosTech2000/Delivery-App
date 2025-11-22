@@ -5,7 +5,14 @@
       "WebFetch(domain:github.com)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(npx tsc:*)",
+      "Bash(test:*)",
+      "Bash(cat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(npx sequelize-cli:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
