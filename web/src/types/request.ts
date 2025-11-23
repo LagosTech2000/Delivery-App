@@ -1,0 +1,75 @@
+export type RequestStatus =
+    | 'pending'
+    | 'available'
+    | 'claimed'
+    | 'in_progress'
+    | 'resolution_provided'
+    | 'accepted'
+    | 'rejected'
+    | 'completed'
+    | 'cancelled';
+
+export type RequestType = 'product_delivery' | 'document' | 'package' | 'custom';
+export type ShippingType = 'national' | 'international';
+
+export interface Location {
+    address: string;
+    city: string;
+    country: string;
+}
+
+export interface Request {
+    id: string;
+    customer_id: string;
+    product_name: string;
+    product_description?: string;
+    product_url?: string;
+    type: RequestType;
+    source?: string;
+    weight?: number;
+    quantity?: number;
+    shipping_type: ShippingType;
+    pickup_location: Location;
+    delivery_location: Location;
+    preferred_contact_method: 'email' | 'whatsapp' | 'both';
+    customer_phone?: string;
+    notes?: string;
+    status: RequestStatus;
+    created_at: string;
+    updated_at: string;
+    claimed_by_agent_id?: string;
+}
+
+export interface CreateRequestData {
+    product_name: string;
+    product_description?: string;
+    product_url?: string;
+    type: RequestType;
+    source?: string;
+    weight?: number;
+    quantity?: number;
+    shipping_type: ShippingType;
+    pickup_location: Location;
+    delivery_location: Location;
+    preferred_contact_method: 'email' | 'whatsapp' | 'both';
+    customer_phone?: string;
+    notes?: string;
+}
+
+export interface RequestFilters {
+    page?: number;
+    limit?: number;
+    status?: RequestStatus;
+    type?: RequestType;
+    shipping_type?: ShippingType;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    meta: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}

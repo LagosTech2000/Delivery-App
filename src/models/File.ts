@@ -28,7 +28,7 @@ interface FileCreationAttributes
     | 'created_at'
     | 'updated_at'
     | 'deleted_at'
-  > {}
+  > { }
 
 class File extends Model<FileAttributes, FileCreationAttributes> implements FileAttributes {
   public id!: string;
@@ -124,6 +124,18 @@ File.init(
       type: DataTypes.ENUM('product_image', 'proof_of_delivery', 'document', 'other'),
       allowNull: false,
       defaultValue: 'other',
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {

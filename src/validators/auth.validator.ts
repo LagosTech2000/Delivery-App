@@ -15,7 +15,7 @@ export const registerValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Name must be between 2 and 100 characters'),
   body('phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .isMobilePhone('any')
     .withMessage('Valid phone number is required'),
   body('preferred_contact_method')

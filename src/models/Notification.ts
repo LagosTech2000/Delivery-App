@@ -29,12 +29,11 @@ interface NotificationCreationAttributes
     | 'metadata'
     | 'created_at'
     | 'updated_at'
-  > {}
+  > { }
 
 class Notification
   extends Model<NotificationAttributes, NotificationCreationAttributes>
-  implements NotificationAttributes
-{
+  implements NotificationAttributes {
   public id!: string;
   public user_id!: string;
   public type!: NotificationType;
@@ -119,6 +118,14 @@ Notification.init(
     metadata: {
       type: DataTypes.JSONB,
       allowNull: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
     },
   },
   {

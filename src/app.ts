@@ -17,7 +17,7 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: env.NODE_ENV === 'development' ? true : env.FRONTEND_URL,
     credentials: true,
     optionsSuccessStatus: 200,
   })

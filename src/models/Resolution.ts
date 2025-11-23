@@ -22,7 +22,7 @@ interface ResolutionCreationAttributes
   extends Optional<
     ResolutionAttributes,
     'id' | 'notes' | 'internal_notes' | 'customer_response_notes' | 'responded_at' | 'created_at' | 'updated_at' | 'deleted_at'
-  > {}
+  > { }
 
 class Resolution extends Model<ResolutionAttributes, ResolutionCreationAttributes> implements ResolutionAttributes {
   public id!: string;
@@ -112,6 +112,18 @@ Resolution.init(
       allowNull: true,
     },
     responded_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    deleted_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },

@@ -16,12 +16,11 @@ interface PricingRuleAttributes {
 }
 
 interface PricingRuleCreationAttributes
-  extends Optional<PricingRuleAttributes, 'id' | 'created_by' | 'created_at' | 'updated_at'> {}
+  extends Optional<PricingRuleAttributes, 'id' | 'created_by' | 'created_at' | 'updated_at'> { }
 
 class PricingRule
   extends Model<PricingRuleAttributes, PricingRuleCreationAttributes>
-  implements PricingRuleAttributes
-{
+  implements PricingRuleAttributes {
   public id!: string;
   public base_rate_national!: number;
   public base_rate_international!: number;
@@ -116,6 +115,14 @@ PricingRule.init(
         key: 'id',
       },
       onDelete: 'SET NULL',
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {

@@ -40,7 +40,22 @@ export const createRequestValidator = [
     .withMessage('Pickup location must be an object'),
   body('pickup_location.address')
     .notEmpty()
-    .withMessage('Pickup address is required'),
+    .withMessage('Pickup address is required')
+    .trim()
+    .isLength({ min: 5, max: 500 })
+    .withMessage('Pickup address must be between 5 and 500 characters'),
+  body('pickup_location.city')
+    .notEmpty()
+    .withMessage('Pickup city is required')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Pickup city must be between 2 and 100 characters'),
+  body('pickup_location.country')
+    .notEmpty()
+    .withMessage('Pickup country is required')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Pickup country must be between 2 and 100 characters'),
   body('delivery_location')
     .notEmpty()
     .withMessage('Delivery location is required')
@@ -48,13 +63,28 @@ export const createRequestValidator = [
     .withMessage('Delivery location must be an object'),
   body('delivery_location.address')
     .notEmpty()
-    .withMessage('Delivery address is required'),
+    .withMessage('Delivery address is required')
+    .trim()
+    .isLength({ min: 5, max: 500 })
+    .withMessage('Delivery address must be between 5 and 500 characters'),
+  body('delivery_location.city')
+    .notEmpty()
+    .withMessage('Delivery city is required')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Delivery city must be between 2 and 100 characters'),
+  body('delivery_location.country')
+    .notEmpty()
+    .withMessage('Delivery country is required')
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Delivery country must be between 2 and 100 characters'),
   body('preferred_contact_method')
     .optional()
     .isIn(['email', 'whatsapp', 'both'])
     .withMessage('Contact method must be email, whatsapp, or both'),
   body('customer_phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .isMobilePhone('any')
     .withMessage('Valid phone number is required'),
   body('notes')

@@ -9,6 +9,11 @@ import {
 } from '../utils/errors';
 import { ResolutionStatus, RequestStatus, UserRole } from '../types';
 import logger from '../utils/logger';
+import {
+  emitResolutionProvided,
+  emitResolutionAccepted,
+  emitResolutionRejected,
+} from '../socket/events';
 
 export class ResolutionService {
   static async createResolution(
@@ -71,6 +76,9 @@ export class ResolutionService {
         requestId: data.request_id,
         agentId,
       });
+
+      // Emit real-time event to customer
+      emitResolutionProvided(request.customer_id, resolution.toJSON());
 
       return resolution;
     } catch (error) {
@@ -242,6 +250,9 @@ export class ResolutionService {
 
       logger.info('Resolution accepted successfully', { resolutionId, customerId });
 
+      // Emit real-time event to agent
+      emitResolutionAccepted(resolution.agent_id, resolution.toJSON());
+
       return resolution;
     } catch (error) {
       logger.error('Accept resolution failed', { error, resolutionId, customerId });
@@ -297,6 +308,9 @@ export class ResolutionService {
       }
 
       logger.info('Resolution rejected successfully', { resolutionId, customerId });
+
+      // Emit real-time event to agent
+      emitResolutionRejected(resolution.agent_id, resolution.toJSON());
 
       return resolution;
     } catch (error) {

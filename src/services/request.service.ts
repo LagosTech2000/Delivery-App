@@ -16,6 +16,12 @@ import {
 } from '../types';
 import logger from '../utils/logger';
 import { Op } from 'sequelize';
+import {
+  emitRequestCreated,
+  emitRequestClaimed,
+  emitRequestUnclaimed,
+  emitRequestUpdated,
+} from '../socket/events';
 
 export class RequestService {
   static async createRequest(
@@ -76,6 +82,9 @@ export class RequestService {
         requestId: request.id,
         customerId,
       });
+
+      // Emit real-time event to all online agents
+      emitRequestCreated(request.toJSON());
 
       return request;
     } catch (error) {
@@ -286,6 +295,9 @@ export class RequestService {
 
       logger.info('Request claimed successfully', { requestId, agentId });
 
+      // Emit real-time event to customer
+      emitRequestClaimed(request.customer_id, request.toJSON());
+
       return request;
     } catch (error) {
       logger.error('Claim request failed', { error, requestId, agentId });
@@ -320,6 +332,9 @@ export class RequestService {
       await request.save();
 
       logger.info('Request unclaimed successfully', { requestId, agentId });
+
+      // Emit real-time event to make request available to agents again
+      emitRequestUnclaimed(request.toJSON());
 
       return request;
     } catch (error) {
@@ -375,6 +390,9 @@ export class RequestService {
       await request.save();
 
       logger.info('Request status updated successfully', { requestId, status, userId });
+
+      // Emit real-time event for status update
+      emitRequestUpdated(request.toJSON());
 
       return request;
     } catch (error) {

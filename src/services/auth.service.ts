@@ -33,21 +33,21 @@ export class AuthService {
         oauth_provider: 'local',
       });
 
-      // Generate email verification token
-      const verificationToken = await JwtService.setEmailVerificationToken(user);
+      // // Generate email verification token
+      // const verificationToken = await JwtService.setEmailVerificationToken(user);
 
-      // Send welcome and verification emails (temporarily disabled for testing)
-      // TODO: Re-enable after SendGrid is configured
-      try {
-        await EmailService.sendWelcomeEmail(user.email, user.name || 'User');
-        await EmailService.sendVerificationEmail(
-          user.email,
-          user.name || 'User',
-          verificationToken
-        );
-      } catch (error) {
-        logger.warn('Email sending failed, but registration continues', { error });
-      }
+      // // Send welcome and verification emails (temporarily disabled for testing)
+      // // TODO: Re-enable after SendGrid is configured
+      // try {
+      //   await EmailService.sendWelcomeEmail(user.email, user.name || 'User');
+      //   await EmailService.sendVerificationEmail(
+      //     user.email,
+      //     user.name || 'User',
+      //     verificationToken
+      //   );
+      // } catch (error) {
+      //   logger.warn('Email sending failed, but registration continues', { error });
+      // }
 
       // Generate JWT tokens
       const tokens = await JwtService.generateTokenPair(user);
