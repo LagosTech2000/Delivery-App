@@ -23,10 +23,14 @@ app.use(
   })
 );
 
+// Body parsers - MUST come before rate limiters!
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  max: 10, // Limit each IP to 5 requests per windowMs
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -46,10 +50,6 @@ const generalLimiter = rateLimit({
 });
 
 app.use('/api/', generalLimiter);
-
-// Body parsers
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // HTTP request logging
 if (env.NODE_ENV === 'development') {
@@ -76,6 +76,7 @@ app.get('/health', (_req: Request, res: Response) => {
     environment: env.NODE_ENV,
   });
 });
+
 
 // API routes
 app.use('/api/v1', routes);

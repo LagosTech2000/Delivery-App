@@ -5,6 +5,8 @@ import { env } from './config/environment';
 import logger from './utils/logger';
 import { socketService } from './socket';
 import { SocketEvents } from './socket/events';
+// Import models to register associations
+import './models';
 
 const PORT = env.PORT || 5000;
 

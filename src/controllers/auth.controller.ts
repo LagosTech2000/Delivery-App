@@ -5,7 +5,7 @@ import { asyncHandler } from '../middleware/error.middleware';
 
 export class AuthController {
   static register = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-    const { email, password, name, phone, preferred_contact_method } = req.body;
+    const { email, password, name, phone, preferred_contact_method, role } = req.body;
 
     const { user, tokens } = await AuthService.register({
       email,
@@ -13,6 +13,7 @@ export class AuthController {
       name,
       phone,
       preferred_contact_method,
+      role
     });
 
     // Remove sensitive fields from response

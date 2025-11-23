@@ -46,7 +46,7 @@ interface RequestCreationAttributes
     | 'created_at'
     | 'updated_at'
     | 'deleted_at'
-  > {}
+  > { }
 
 class Request extends Model<RequestAttributes, RequestCreationAttributes> implements RequestAttributes {
   public id!: string;
@@ -153,19 +153,19 @@ Request.init(
       allowNull: true,
     },
     product_images: {
-      type: sequelize.options.dialect === 'sqlite'
+      type: sequelize.getDialect() === 'sqlite'
         ? DataTypes.TEXT
         : DataTypes.ARRAY(DataTypes.STRING),
-      defaultValue: sequelize.options.dialect === 'sqlite' ? '[]' : [],
+      defaultValue: sequelize.getDialect() === 'sqlite' ? '[]' : [],
       get() {
         const raw = this.getDataValue('product_images');
-        if (sequelize.options.dialect === 'sqlite') {
+        if (sequelize.getDialect() === 'sqlite') {
           return raw ? JSON.parse(raw as any) : [];
         }
         return raw || [];
       },
       set(value: string[]) {
-        if (sequelize.options.dialect === 'sqlite') {
+        if (sequelize.getDialect() === 'sqlite') {
           this.setDataValue('product_images', JSON.stringify(value) as any);
         } else {
           this.setDataValue('product_images', value as any);
@@ -227,6 +227,18 @@ Request.init(
     },
     cancelled_reason: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
       allowNull: true,
     },
   },

@@ -61,7 +61,7 @@ interface UserCreationAttributes
     | 'created_at'
     | 'updated_at'
     | 'deleted_at'
-  > {}
+  > { }
 
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: string;
@@ -220,19 +220,19 @@ User.init(
       defaultValue: false,
     },
     skills: {
-      type: sequelize.options.dialect === 'sqlite'
+      type: sequelize.getDialect() === 'sqlite'
         ? DataTypes.TEXT
         : DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
       get() {
         const raw = this.getDataValue('skills');
-        if (sequelize.options.dialect === 'sqlite') {
+        if (sequelize.getDialect() === 'sqlite') {
           return raw ? JSON.parse(raw as any) : null;
         }
         return raw;
       },
       set(value: string[] | null) {
-        if (sequelize.options.dialect === 'sqlite') {
+        if (sequelize.getDialect() === 'sqlite') {
           this.setDataValue('skills', value ? JSON.stringify(value) as any : null);
         } else {
           this.setDataValue('skills', value as any);
@@ -250,6 +250,18 @@ User.init(
     total_deliveries: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
   },
   {
