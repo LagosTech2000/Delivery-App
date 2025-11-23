@@ -59,7 +59,7 @@ export class RequestService {
         product_images: data.product_images || [],
         type: data.type,
         source: data.source || RequestSource.OTHER,
-        status: RequestStatus.PENDING,
+        status: RequestStatus.AVAILABLE, // Changed from PENDING to AVAILABLE so agents can see it immediately
         weight: data.weight,
         quantity: data.quantity || 1,
         shipping_type: data.shipping_type,
@@ -148,16 +148,18 @@ export class RequestService {
       if (userRole === UserRole.CUSTOMER) {
         where.customer_id = userId;
       } else if (userRole === UserRole.AGENT) {
-        // Agents see available requests OR their claimed requests
+        // Agents see available/pending requests OR their claimed requests
         where[Op.or] = [
           { status: RequestStatus.AVAILABLE },
+          { status: RequestStatus.PENDING },
           { claimed_by_agent_id: userId },
         ];
       }
       // Admins see all requests (no filter)
 
       // Additional filters
-      if (filters.status) {
+      // Don't apply status filter for agents as it conflicts with their OR condition
+      if (filters.status && userRole !== UserRole.AGENT) {
         where.status = filters.status;
       }
       if (filters.type) {

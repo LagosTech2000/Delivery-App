@@ -21,6 +21,12 @@ export interface Location {
 export interface Request {
     id: string;
     customer_id: string;
+    customer?: {
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+    };
     product_name: string;
     product_description?: string;
     product_url?: string;
