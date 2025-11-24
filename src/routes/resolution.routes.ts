@@ -16,7 +16,13 @@ const router = Router();
 router.use(authenticate);
 
 // Agent creates and updates resolutions
-router.post('/', isAgent, createResolutionValidator, validate, ResolutionController.createResolution);
+router.post(
+  '/',
+  isAgent,
+  createResolutionValidator,
+  validate,
+  ResolutionController.createResolution
+);
 router.put('/:id', isAgent, updateResolutionValidator, validate, ResolutionController.updateResolution);
 
 // Both agents and customers can view resolutions

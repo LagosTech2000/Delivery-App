@@ -15,6 +15,11 @@ export class ResolutionController {
     const {
       request_id,
       quote_breakdown,
+      shipping_cost,
+      product_details,
+      store_info,
+      total_amount,
+      allowed_payment_methods,
       estimated_delivery_days,
       notes,
       internal_notes,
@@ -23,6 +28,11 @@ export class ResolutionController {
     const resolution = await ResolutionService.createResolution(userId, {
       request_id,
       quote_breakdown,
+      shipping_cost,
+      product_details,
+      store_info,
+      total_amount,
+      allowed_payment_methods,
       estimated_delivery_days,
       notes,
       internal_notes,

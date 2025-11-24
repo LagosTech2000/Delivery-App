@@ -32,4 +32,8 @@ router.post('/:id/unclaim', isAgent, unclaimRequestValidator, validate, RequestC
 // Status updates (both customers and agents can update, but with different permissions)
 router.put('/:id/status', updateStatusValidator, validate, RequestController.updateStatus);
 
+// Payment operations
+router.post('/:id/payment', isCustomer, RequestController.submitPayment);
+router.post('/:id/payment/confirm', isAgent, RequestController.confirmPayment);
+
 export default router;

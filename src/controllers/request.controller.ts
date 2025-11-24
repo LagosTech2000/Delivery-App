@@ -193,6 +193,50 @@ export class RequestController {
 
     ResponseHandler.success(res, { request }, 'Request status updated successfully', 200);
   });
+
+  static submitPayment = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const userId = req.user?.id;
+    const requestId = req.params.id;
+
+    if (!userId) {
+      ResponseHandler.error(res, 'User not authenticated', 401);
+      return;
+    }
+
+    const { payment_method, payment_proof } = req.body;
+
+    const request = await RequestService.submitPayment(requestId, userId, payment_method, payment_proof);
+
+    ResponseHandler.success(
+      res,
+      { request },
+      payment_method === 'card'
+        ? 'Payment processed successfully'
+        : 'Payment proof submitted. Awaiting agent verification.',
+      200
+    );
+  });
+
+  static confirmPayment = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+    const userId = req.user?.id;
+    const requestId = req.params.id;
+
+    if (!userId) {
+      ResponseHandler.error(res, 'User not authenticated', 401);
+      return;
+    }
+
+    const { approved } = req.body;
+
+    const request = await RequestService.confirmPayment(requestId, userId, approved);
+
+    ResponseHandler.success(
+      res,
+      { request },
+      approved ? 'Payment confirmed successfully' : 'Payment rejected',
+      200
+    );
+  });
 }
 
 export default RequestController;

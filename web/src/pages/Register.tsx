@@ -21,7 +21,7 @@ export const Register = () => {
                 password: data.password,
                 name: data.name,
                 role: data.role,
-                phone: data.phoneNumber ? `${data.countryCode || '+1'}${data.phoneNumber}` : undefined
+                phone: data.phoneNumber ? `${data.countryCode || '+504'}${data.phoneNumber}` : undefined
             };
 
             await registerUser(submitData);
@@ -92,12 +92,12 @@ export const Register = () => {
                                 <div className="flex gap-2">
                                     <select
                                         {...register('countryCode')}
-                                        defaultValue="+1"
+                                        defaultValue="+504"
                                         className="w-32 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white text-slate-900"
                                     >
+                                        <option value="+504">🇭🇳 +504</option>
                                         <option value="+1">🇺🇸 +1</option>
                                         <option value="+44">🇬🇧 +44</option>
-                                        <option value="+504">🇭🇳 +504</option>
                                         <option value="+91">🇮🇳 +91</option>
                                         <option value="+86">🇨🇳 +86</option>
                                         <option value="+81">🇯🇵 +81</option>
@@ -114,16 +114,21 @@ export const Register = () => {
                                     </select>
                                     <input
                                         type="tel"
-                                        placeholder="1234567890"
-                                        {...register('phoneNumber')}
+                                        placeholder="12345678"
+                                        {...register('phoneNumber', {
+                                            pattern: {
+                                                value: /^[0-9]{7,15}$/,
+                                                message: "Please enter a valid phone number (digits only)"
+                                            }
+                                        })}
                                         className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 placeholder-slate-400"
                                     />
                                 </div>
                                 <p className="mt-1 text-xs text-slate-500">
-                                    Digits only - no +, spaces, or dashes. Example: 2025551234
+                                    Digits only - no +, spaces, or dashes. Example: 99551234
                                 </p>
-                                {errors.phone?.message && (
-                                    <p className="text-sm text-red-600 ml-1">{errors.phone.message}</p>
+                                {errors.phoneNumber?.message && (
+                                    <p className="text-sm text-red-600 ml-1">{errors.phoneNumber.message}</p>
                                 )}
                             </div>
 

@@ -1,14 +1,34 @@
-import { X, Package, MapPin, Calendar, User, Phone, Mail, FileText, Tag } from 'lucide-react';
+import { useState } from 'react';
+import { X, MapPin, Calendar, User, Phone, Mail, FileText, Tag, ShoppingCart, FileCheck, Box, Sparkles, Loader2, CheckCircle, Clock } from 'lucide-react';
 import type { Request } from '../../types/request';
 import { Button } from '../ui/Button';
+import { requestService } from '../../services/request.service';
+import { useAuth } from '../../context/AuthContext';
+import { CreateResolutionModal } from '../resolutions/CreateResolutionModal';
 
 interface RequestDetailModalProps {
     request: Request;
     isOpen: boolean;
     onClose: () => void;
+    onRequestUpdated?: () => void;
 }
 
-export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailModalProps) => {
+const getRequestTypeIcon = (type: string) => {
+    switch (type) {
+        case 'product_delivery': return ShoppingCart;
+        case 'document': return FileCheck;
+        case 'package': return Box;
+        case 'custom': return Sparkles;
+        default: return Box;
+    }
+};
+
+export const RequestDetailModal = ({ request, isOpen, onClose, onRequestUpdated }: RequestDetailModalProps) => {
+    const { user } = useAuth();
+    const [isClaiming, setIsClaiming] = useState(false);
+    const [error, setError] = useState('');
+    const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
+
     if (!isOpen) return null;
 
     const formatDate = (dateString: string) => {
@@ -24,13 +44,14 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-            available: 'bg-blue-100 text-blue-800 border-blue-200',
-            claimed: 'bg-purple-100 text-purple-800 border-purple-200',
-            in_progress: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-            resolution_provided: 'bg-orange-100 text-orange-800 border-orange-200',
-            accepted: 'bg-green-100 text-green-800 border-green-200',
+            claimed: 'bg-blue-100 text-blue-800 border-blue-200',
+            resolution_provided: 'bg-purple-100 text-purple-800 border-purple-200',
+            payment: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+            verification: 'bg-orange-100 text-orange-800 border-orange-200',
+            confirmed: 'bg-teal-100 text-teal-800 border-teal-200',
+            customer_rejected: 'bg-red-100 text-red-800 border-red-200',
+            agent_rejected: 'bg-red-100 text-red-800 border-red-200',
             completed: 'bg-green-100 text-green-800 border-green-200',
-            rejected: 'bg-red-100 text-red-800 border-red-200',
             cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
         };
         return colors[status] || 'bg-gray-100 text-gray-800 border-gray-200';
@@ -41,6 +62,26 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
             word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' ');
     };
+
+    const handleClaimRequest = async () => {
+        try {
+            setIsClaiming(true);
+            setError('');
+            await requestService.claimRequest(request.id);
+            onRequestUpdated?.();
+            onClose();
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to claim request');
+        } finally {
+            setIsClaiming(false);
+        }
+    };
+
+    const TypeIcon = getRequestTypeIcon(request.type);
+    const isAgent = user?.role === 'agent';
+    const isCustomer = user?.role === 'customer';
+    const canClaim = isAgent && request.status === 'pending';
+    const canCreateResolution = isAgent && request.status === 'claimed' && request.claimed_by_agent_id === user?.id;
 
     return (
         <>
@@ -60,7 +101,7 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
                     <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary-100 rounded-lg">
-                                <Package className="h-5 w-5 text-primary-600" />
+                                <TypeIcon className="h-5 w-5 text-primary-600" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900">{request.product_name}</h2>
@@ -87,6 +128,50 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
                                 Created {formatDate(request.created_at)}
                             </span>
                         </div>
+
+                        {/* Agent Working Message (for customers when claimed) */}
+                        {isCustomer && request.status === 'claimed' && (
+                            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                                <div className="flex gap-3">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <Clock className="h-5 w-5 text-blue-600 animate-pulse" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-blue-900 mb-1">Agent is Working on Your Request</h3>
+                                        <p className="text-sm text-blue-700">
+                                            An agent has claimed your request and is currently working on finding the best solution for you.
+                                            You'll receive a resolution proposal soon!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Agent Information (when claimed) */}
+                        {request.status !== 'pending' && request.claimed_by_agent_id && (
+                            <div className="bg-green-50 rounded-xl p-4 space-y-3 border border-green-100">
+                                <div className="flex items-center gap-2 text-green-900 font-semibold">
+                                    <CheckCircle className="h-4 w-4" />
+                                    <h3>Assigned Agent</h3>
+                                </div>
+                                <div className="grid gap-2 text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-4 w-4 text-green-600" />
+                                        <span className="text-green-700">Agent ID:</span>
+                                        <span className="font-medium text-green-900">{request.claimed_by_agent_id}</span>
+                                    </div>
+                                    {request.claimed_at && (
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-green-600" />
+                                            <span className="text-green-700">Claimed:</span>
+                                            <span className="font-medium text-green-900">{formatDate(request.claimed_at)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Customer Information */}
                         {request.customer && (
@@ -135,7 +220,7 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
                         {/* Product Information */}
                         <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                             <div className="flex items-center gap-2 text-slate-900 font-semibold">
-                                <Package className="h-4 w-4" />
+                                <TypeIcon className="h-4 w-4" />
                                 <h3>Product Information</h3>
                             </div>
 
@@ -269,6 +354,13 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
                                 <p className="text-sm text-amber-900">{request.notes}</p>
                             </div>
                         )}
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                                <p className="text-sm text-red-600">{error}</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Footer */}
@@ -277,15 +369,37 @@ export const RequestDetailModal = ({ request, isOpen, onClose }: RequestDetailMo
                             <Button variant="outline" onClick={onClose}>
                                 Close
                             </Button>
-                            {request.status === 'available' && (
-                                <Button>
-                                    Claim Request
+                            {canClaim && (
+                                <Button onClick={handleClaimRequest} isLoading={isClaiming}>
+                                    {isClaiming ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Claiming...
+                                        </>
+                                    ) : (
+                                        'Claim Request'
+                                    )}
+                                </Button>
+                            )}
+                            {canCreateResolution && (
+                                <Button onClick={() => setIsResolutionModalOpen(true)}>
+                                    Create Resolution
                                 </Button>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Create Resolution Modal */}
+            <CreateResolutionModal
+                request={request}
+                isOpen={isResolutionModalOpen}
+                onClose={() => setIsResolutionModalOpen(false)}
+                onSuccess={() => {
+                    onRequestUpdated?.();
+                }}
+            />
         </>
     );
 };

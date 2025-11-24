@@ -1,12 +1,17 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import { ResolutionStatus, PricingBreakdown } from '../types';
+import { ResolutionStatus, PricingBreakdown, PaymentMethod } from '../types';
 
 interface ResolutionAttributes {
   id: string;
   request_id: string;
   agent_id: string;
   quote_breakdown: PricingBreakdown;
+  shipping_cost: number;
+  product_details: any;
+  store_info: any;
+  total_amount: number;
+  allowed_payment_methods: PaymentMethod[];
   estimated_delivery_days: number;
   notes: string | null;
   internal_notes: string | null;
@@ -29,6 +34,11 @@ class Resolution extends Model<ResolutionAttributes, ResolutionCreationAttribute
   public request_id!: string;
   public agent_id!: string;
   public quote_breakdown!: PricingBreakdown;
+  public shipping_cost!: number;
+  public product_details!: any;
+  public store_info!: any;
+  public total_amount!: number;
+  public allowed_payment_methods!: PaymentMethod[];
   public estimated_delivery_days!: number;
   public notes!: string | null;
   public internal_notes!: string | null;
@@ -86,6 +96,48 @@ Resolution.init(
     quote_breakdown: {
       type: DataTypes.JSONB,
       allowNull: false,
+    },
+    shipping_cost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      validate: {
+        min: 0,
+      },
+    },
+    product_details: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+    },
+    store_info: {
+      type: DataTypes.JSONB,
+      allowNull: false,
+    },
+    total_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      validate: {
+        min: 0,
+      },
+    },
+    allowed_payment_methods: {
+      type: sequelize.getDialect() === 'sqlite'
+        ? DataTypes.TEXT
+        : DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: false,
+      get() {
+        const raw = this.getDataValue('allowed_payment_methods');
+        if (sequelize.getDialect() === 'sqlite') {
+          return raw ? JSON.parse(raw as any) : [];
+        }
+        return raw || [];
+      },
+      set(value: PaymentMethod[]) {
+        if (sequelize.getDialect() === 'sqlite') {
+          this.setDataValue('allowed_payment_methods', JSON.stringify(value) as any);
+        } else {
+          this.setDataValue('allowed_payment_methods', value as any);
+        }
+      },
     },
     estimated_delivery_days: {
       type: DataTypes.INTEGER,

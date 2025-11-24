@@ -1,6 +1,6 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../config/database';
-import { RequestType, RequestSource, ShippingType, RequestStatus, ContactMethod, Location } from '../types';
+import { RequestType, RequestSource, ShippingType, RequestStatus, ContactMethod, Location, PaymentMethod } from '../types';
 
 interface RequestAttributes {
   id: string;
@@ -21,6 +21,8 @@ interface RequestAttributes {
   preferred_contact_method: ContactMethod;
   customer_phone: string | null;
   notes: string | null;
+  payment_method: PaymentMethod | null;
+  payment_proof: string | null;
   claimed_at: Date | null;
   completed_at: Date | null;
   cancelled_reason: string | null;
@@ -40,6 +42,8 @@ interface RequestCreationAttributes
     | 'weight'
     | 'notes'
     | 'customer_phone'
+    | 'payment_method'
+    | 'payment_proof'
     | 'claimed_at'
     | 'completed_at'
     | 'cancelled_reason'
@@ -49,34 +53,36 @@ interface RequestCreationAttributes
   > { }
 
 class Request extends Model<RequestAttributes, RequestCreationAttributes> implements RequestAttributes {
-  public id!: string;
-  public customer_id!: string;
-  public claimed_by_agent_id!: string | null;
-  public type!: RequestType;
-  public source!: RequestSource;
-  public product_name!: string;
-  public product_description!: string | null;
-  public product_url!: string | null;
-  public product_images!: string[];
-  public weight!: number | null;
-  public quantity!: number;
-  public shipping_type!: ShippingType;
-  public pickup_location!: Location;
-  public delivery_location!: Location;
-  public status!: RequestStatus;
-  public preferred_contact_method!: ContactMethod;
-  public customer_phone!: string | null;
-  public notes!: string | null;
-  public claimed_at!: Date | null;
-  public completed_at!: Date | null;
-  public cancelled_reason!: string | null;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
-  public deleted_at!: Date | null;
+  declare id: string;
+  declare customer_id: string;
+  declare claimed_by_agent_id: string | null;
+  declare type: RequestType;
+  declare source: RequestSource;
+  declare product_name: string;
+  declare product_description: string | null;
+  declare product_url: string | null;
+  declare product_images: string[];
+  declare weight: number | null;
+  declare quantity: number;
+  declare shipping_type: ShippingType;
+  declare pickup_location: Location;
+  declare delivery_location: Location;
+  declare status: RequestStatus;
+  declare preferred_contact_method: ContactMethod;
+  declare customer_phone: string | null;
+  declare notes: string | null;
+  declare payment_method: PaymentMethod | null;
+  declare payment_proof: string | null;
+  declare claimed_at: Date | null;
+  declare completed_at: Date | null;
+  declare cancelled_reason: string | null;
+  declare readonly created_at: Date;
+  declare readonly updated_at: Date;
+  declare readonly deleted_at: Date | null;
 
   // Instance methods
   canBeClaimed(): boolean {
-    return this.status === RequestStatus.AVAILABLE && !this.claimed_by_agent_id;
+    return this.status === RequestStatus.PENDING && !this.claimed_by_agent_id;
   }
 
   canBeUpdatedByAgent(agentId: string): boolean {
@@ -84,7 +90,7 @@ class Request extends Model<RequestAttributes, RequestCreationAttributes> implem
   }
 
   canBeUpdatedByCustomer(customerId: string): boolean {
-    return this.customer_id === customerId && [RequestStatus.PENDING, RequestStatus.AVAILABLE].includes(this.status);
+    return this.customer_id === customerId && this.status === RequestStatus.PENDING;
   }
 
   async claimByAgent(agentId: string): Promise<void> {
@@ -215,6 +221,14 @@ Request.init(
     },
     notes: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    payment_method: {
+      type: DataTypes.ENUM(...Object.values(PaymentMethod)),
+      allowNull: true,
+    },
+    payment_proof: {
+      type: DataTypes.STRING(500),
       allowNull: true,
     },
     claimed_at: {

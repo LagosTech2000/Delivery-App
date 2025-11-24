@@ -21,6 +21,11 @@ export class ResolutionService {
     data: {
       request_id: string;
       quote_breakdown: any;
+      shipping_cost: number;
+      product_details: any;
+      store_info: any;
+      total_amount: number;
+      allowed_payment_methods: any[];
       estimated_delivery_days: number;
       notes?: string;
       internal_notes?: string;
@@ -40,8 +45,8 @@ export class ResolutionService {
         throw new AuthorizationError('You can only create resolutions for your claimed requests');
       }
 
-      if (request.status !== RequestStatus.CLAIMED && request.status !== RequestStatus.IN_PROGRESS) {
-        throw new ValidationError('Request must be claimed or in progress to provide a resolution');
+      if (request.status !== RequestStatus.CLAIMED) {
+        throw new ValidationError('Request must be claimed to provide a resolution');
       }
 
       // Create resolution
@@ -49,6 +54,11 @@ export class ResolutionService {
         request_id: data.request_id,
         agent_id: agentId,
         quote_breakdown: data.quote_breakdown,
+        shipping_cost: data.shipping_cost,
+        product_details: data.product_details,
+        store_info: data.store_info,
+        total_amount: data.total_amount,
+        allowed_payment_methods: data.allowed_payment_methods,
         estimated_delivery_days: data.estimated_delivery_days,
         notes: data.notes,
         internal_notes: data.internal_notes,
@@ -233,8 +243,8 @@ export class ResolutionService {
       // Accept the resolution
       await resolution.accept(customerResponseNotes);
 
-      // Update request status
-      request.status = RequestStatus.ACCEPTED;
+      // Update request status to PAYMENT
+      request.status = RequestStatus.PAYMENT;
       await request.save();
 
       // Send notification to agent
@@ -291,8 +301,8 @@ export class ResolutionService {
       // Reject the resolution
       await resolution.reject(customerResponseNotes);
 
-      // Update request status back to claimed so agent can provide another resolution
-      request.status = RequestStatus.CLAIMED;
+      // Update request status to CUSTOMER_REJECTED
+      request.status = RequestStatus.CUSTOMER_REJECTED;
       await request.save();
 
       // Send notification to agent

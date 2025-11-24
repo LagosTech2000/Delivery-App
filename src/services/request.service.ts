@@ -59,7 +59,7 @@ export class RequestService {
         product_images: data.product_images || [],
         type: data.type,
         source: data.source || RequestSource.OTHER,
-        status: RequestStatus.AVAILABLE, // Changed from PENDING to AVAILABLE so agents can see it immediately
+        status: RequestStatus.PENDING, // Pending until agent claims it
         weight: data.weight,
         quantity: data.quantity || 1,
         shipping_type: data.shipping_type,
@@ -114,9 +114,9 @@ export class RequestService {
       if (
         userRole === UserRole.AGENT &&
         request.claimed_by_agent_id !== userId &&
-        request.status !== RequestStatus.AVAILABLE
+        request.status !== RequestStatus.PENDING
       ) {
-        throw new AuthorizationError('You can only view available or your claimed requests');
+        throw new AuthorizationError('You can only view pending or your claimed requests');
       }
 
       return request;
@@ -148,9 +148,8 @@ export class RequestService {
       if (userRole === UserRole.CUSTOMER) {
         where.customer_id = userId;
       } else if (userRole === UserRole.AGENT) {
-        // Agents see available/pending requests OR their claimed requests
+        // Agents see pending requests OR their claimed requests
         where[Op.or] = [
-          { status: RequestStatus.AVAILABLE },
           { status: RequestStatus.PENDING },
           { claimed_by_agent_id: userId },
         ];
@@ -213,7 +212,7 @@ export class RequestService {
         throw new AuthorizationError('You can only update your own requests');
       }
 
-      if (request.status !== RequestStatus.PENDING && request.status !== RequestStatus.AVAILABLE) {
+      if (request.status !== RequestStatus.PENDING) {
         throw new ValidationError('Cannot update request after it has been claimed');
       }
 
@@ -248,7 +247,7 @@ export class RequestService {
         throw new AuthorizationError('You can only delete your own requests');
       }
 
-      if (request.status !== RequestStatus.PENDING && request.status !== RequestStatus.AVAILABLE) {
+      if (request.status !== RequestStatus.PENDING) {
         throw new ValidationError('Cannot delete request after it has been claimed');
       }
 
@@ -265,14 +264,31 @@ export class RequestService {
     try {
       const request = await Request.findByPk(requestId, {
         include: [{ model: User, as: 'customer' }],
+        attributes: { exclude: [] }, // Explicitly include all attributes
       });
 
       if (!request) {
         throw new NotFoundError('Request not found');
       }
 
+      // Debug logging
+      logger.info('Request data for claim', {
+        requestId,
+        status: request.status,
+        statusRaw: request.getDataValue('status'),
+        allData: request.toJSON(),
+      });
+
       if (!request.canBeClaimed()) {
-        throw new ValidationError('Request cannot be claimed (already claimed or not available)');
+        logger.error('Request cannot be claimed', {
+          requestId,
+          currentStatus: request.status,
+          claimedBy: request.claimed_by_agent_id,
+          expectedStatus: RequestStatus.PENDING
+        });
+        throw new ValidationError(
+          `Request cannot be claimed. Current status: ${request.status}, Already claimed: ${!!request.claimed_by_agent_id}`
+        );
       }
 
       // Get agent details
@@ -320,16 +336,13 @@ export class RequestService {
       }
 
       // Cannot unclaim if already quoted or in progress
-      if (
-        request.status !== RequestStatus.CLAIMED &&
-        request.status !== RequestStatus.AVAILABLE
-      ) {
+      if (request.status !== RequestStatus.CLAIMED) {
         throw new ValidationError('Cannot unclaim request at this stage');
       }
 
       // Unclaim
       request.claimed_by_agent_id = null;
-      request.status = RequestStatus.AVAILABLE;
+      request.status = RequestStatus.PENDING;
       request.claimed_at = null;
       await request.save();
 
@@ -368,13 +381,14 @@ export class RequestService {
 
       // Validate status transition
       const validTransitions: Record<RequestStatus, RequestStatus[]> = {
-        [RequestStatus.PENDING]: [RequestStatus.AVAILABLE, RequestStatus.CANCELLED],
-        [RequestStatus.AVAILABLE]: [RequestStatus.CLAIMED, RequestStatus.CANCELLED],
-        [RequestStatus.CLAIMED]: [RequestStatus.IN_PROGRESS, RequestStatus.RESOLUTION_PROVIDED, RequestStatus.AVAILABLE, RequestStatus.CANCELLED],
-        [RequestStatus.IN_PROGRESS]: [RequestStatus.RESOLUTION_PROVIDED, RequestStatus.CANCELLED],
-        [RequestStatus.RESOLUTION_PROVIDED]: [RequestStatus.ACCEPTED, RequestStatus.REJECTED, RequestStatus.CANCELLED],
-        [RequestStatus.ACCEPTED]: [RequestStatus.IN_PROGRESS, RequestStatus.COMPLETED, RequestStatus.CANCELLED],
-        [RequestStatus.REJECTED]: [RequestStatus.AVAILABLE, RequestStatus.CANCELLED],
+        [RequestStatus.PENDING]: [RequestStatus.CLAIMED, RequestStatus.CANCELLED],
+        [RequestStatus.CLAIMED]: [RequestStatus.RESOLUTION_PROVIDED, RequestStatus.PENDING, RequestStatus.CANCELLED],
+        [RequestStatus.RESOLUTION_PROVIDED]: [RequestStatus.PAYMENT, RequestStatus.CUSTOMER_REJECTED, RequestStatus.CANCELLED],
+        [RequestStatus.PAYMENT]: [RequestStatus.VERIFICATION, RequestStatus.CONFIRMED, RequestStatus.CANCELLED],
+        [RequestStatus.VERIFICATION]: [RequestStatus.CONFIRMED, RequestStatus.AGENT_REJECTED, RequestStatus.CANCELLED],
+        [RequestStatus.CONFIRMED]: [RequestStatus.COMPLETED, RequestStatus.CANCELLED],
+        [RequestStatus.CUSTOMER_REJECTED]: [RequestStatus.CLAIMED, RequestStatus.CANCELLED],
+        [RequestStatus.AGENT_REJECTED]: [RequestStatus.PAYMENT, RequestStatus.CANCELLED],
         [RequestStatus.COMPLETED]: [],
         [RequestStatus.CANCELLED]: [],
       };
@@ -399,6 +413,88 @@ export class RequestService {
       return request;
     } catch (error) {
       logger.error('Update status failed', { error, requestId, status, userId });
+      throw error;
+    }
+  }
+
+  static async submitPayment(
+    requestId: string,
+    customerId: string,
+    paymentMethod: string,
+    paymentProof?: string
+  ): Promise<Request> {
+    try {
+      const request = await Request.findByPk(requestId);
+      if (!request) {
+        throw new NotFoundError('Request not found');
+      }
+
+      // Verify customer owns the request
+      if (request.customer_id !== customerId) {
+        throw new AuthorizationError('You can only submit payment for your own requests');
+      }
+
+      // Must be in PAYMENT status
+      if (request.status !== RequestStatus.PAYMENT) {
+        throw new ValidationError('Request must be in payment status');
+      }
+
+      request.payment_method = paymentMethod as any;
+      request.payment_proof = paymentProof || null;
+
+      // If card payment, auto-confirm
+      if (paymentMethod === 'card') {
+        request.status = RequestStatus.CONFIRMED;
+      } else {
+        // Other methods need verification
+        request.status = RequestStatus.VERIFICATION;
+      }
+
+      await request.save();
+
+      logger.info('Payment submitted successfully', { requestId, customerId, paymentMethod });
+
+      return request;
+    } catch (error) {
+      logger.error('Submit payment failed', { error, requestId, customerId });
+      throw error;
+    }
+  }
+
+  static async confirmPayment(
+    requestId: string,
+    agentId: string,
+    approved: boolean
+  ): Promise<Request> {
+    try {
+      const request = await Request.findByPk(requestId);
+      if (!request) {
+        throw new NotFoundError('Request not found');
+      }
+
+      // Verify agent claimed the request
+      if (request.claimed_by_agent_id !== agentId) {
+        throw new AuthorizationError('You can only confirm payment for your claimed requests');
+      }
+
+      // Must be in VERIFICATION status
+      if (request.status !== RequestStatus.VERIFICATION) {
+        throw new ValidationError('Request must be in verification status');
+      }
+
+      if (approved) {
+        request.status = RequestStatus.CONFIRMED;
+      } else {
+        request.status = RequestStatus.AGENT_REJECTED;
+      }
+
+      await request.save();
+
+      logger.info('Payment confirmation processed', { requestId, agentId, approved });
+
+      return request;
+    } catch (error) {
+      logger.error('Confirm payment failed', { error, requestId, agentId });
       throw error;
     }
   }

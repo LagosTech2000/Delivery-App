@@ -163,6 +163,20 @@ export const Dashboard = () => {
                     request={selectedRequest}
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
+                    onRequestUpdated={() => {
+                        // Refresh the requests list
+                        const fetchAvailableRequests = async () => {
+                            if (user?.role === 'agent') {
+                                try {
+                                    const response = await requestService.getRequests({ limit: 6 });
+                                    setAvailableRequests(response.data);
+                                } catch (error) {
+                                    console.error('Failed to fetch available requests', error);
+                                }
+                            }
+                        };
+                        fetchAvailableRequests();
+                    }}
                 />
             )}
         </>

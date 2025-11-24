@@ -32,14 +32,22 @@ export enum ShippingType {
 
 export enum RequestStatus {
   PENDING = 'pending',
-  AVAILABLE = 'available',
   CLAIMED = 'claimed',
-  IN_PROGRESS = 'in_progress',
   RESOLUTION_PROVIDED = 'resolution_provided',
-  ACCEPTED = 'accepted',
-  REJECTED = 'rejected',
+  PAYMENT = 'payment',
+  VERIFICATION = 'verification',
+  CONFIRMED = 'confirmed',
+  CUSTOMER_REJECTED = 'customer_rejected',
+  AGENT_REJECTED = 'agent_rejected',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
+}
+
+export enum PaymentMethod {
+  CARD = 'card',
+  ACH_TRANSFER = 'ach_transfer',
+  BANK_DEPOSIT = 'bank_deposit',
+  CASH = 'cash',
 }
 
 export enum ResolutionStatus {

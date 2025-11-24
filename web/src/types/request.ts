@@ -1,13 +1,16 @@
 export type RequestStatus =
     | 'pending'
-    | 'available'
     | 'claimed'
-    | 'in_progress'
     | 'resolution_provided'
-    | 'accepted'
-    | 'rejected'
+    | 'payment'
+    | 'verification'
+    | 'confirmed'
+    | 'customer_rejected'
+    | 'agent_rejected'
     | 'completed'
     | 'cancelled';
+
+export type PaymentMethod = 'card' | 'ach_transfer' | 'bank_deposit' | 'cash';
 
 export type RequestType = 'product_delivery' | 'document' | 'package' | 'custom';
 export type ShippingType = 'national' | 'international';
@@ -40,6 +43,9 @@ export interface Request {
     preferred_contact_method: 'email' | 'whatsapp' | 'both';
     customer_phone?: string;
     notes?: string;
+    payment_method?: PaymentMethod;
+    payment_proof?: string;
+    claimed_at?: string;
     status: RequestStatus;
     created_at: string;
     updated_at: string;

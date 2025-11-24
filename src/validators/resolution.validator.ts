@@ -7,18 +7,49 @@ export const createResolutionValidator = [
   body('quote_breakdown')
     .isObject()
     .withMessage('Quote breakdown must be an object'),
-  body('quote_breakdown.baseCost')
+  body('quote_breakdown.product_cost')
     .isFloat({ min: 0 })
-    .withMessage('Base cost must be a positive number'),
-  body('quote_breakdown.weightCost')
+    .withMessage('Product cost must be a positive number'),
+  body('quote_breakdown.service_fee')
     .isFloat({ min: 0 })
-    .withMessage('Weight cost must be a positive number'),
-  body('quote_breakdown.distanceCost')
+    .withMessage('Service fee must be a positive number'),
+  body('quote_breakdown.taxes')
     .isFloat({ min: 0 })
-    .withMessage('Distance cost must be a positive number'),
-  body('quote_breakdown.total')
+    .withMessage('Taxes must be a positive number'),
+  body('shipping_cost')
     .isFloat({ min: 0 })
-    .withMessage('Total cost must be a positive number'),
+    .withMessage('Shipping cost must be a positive number'),
+  body('product_details')
+    .isObject()
+    .withMessage('Product details must be an object'),
+  body('product_details.name')
+    .trim()
+    .notEmpty()
+    .withMessage('Product name is required'),
+  body('product_details.store')
+    .trim()
+    .notEmpty()
+    .withMessage('Product store is required'),
+  body('product_details.price')
+    .isFloat({ min: 0 })
+    .withMessage('Product price must be a positive number'),
+  body('store_info')
+    .isObject()
+    .withMessage('Store info must be an object'),
+  body('store_info.name')
+    .trim()
+    .notEmpty()
+    .withMessage('Store name is required'),
+  body('store_info.location')
+    .trim()
+    .notEmpty()
+    .withMessage('Store location is required'),
+  body('total_amount')
+    .isFloat({ min: 0 })
+    .withMessage('Total amount must be a positive number'),
+  body('allowed_payment_methods')
+    .isArray({ min: 1 })
+    .withMessage('At least one payment method must be allowed'),
   body('estimated_delivery_days')
     .isInt({ min: 1, max: 365 })
     .withMessage('Estimated delivery days must be between 1 and 365'),

@@ -7,7 +7,7 @@ import UserModel from '../models/User';
 // Extend Express Request to include user
 declare global {
   namespace Express {
-    interface User extends UserModel {}
+    interface User extends UserModel { }
   }
 }
 
